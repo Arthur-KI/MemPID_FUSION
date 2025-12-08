@@ -1,7 +1,7 @@
 # training_MemPID_FUSION_v2_5.py
 # ═══════════════════════════════════════════════════════════════════
 #  🧠 MemPID FUSION v2.5
-#  Gleiche Größe wie v2 (~17M) + Alle modernen Verbesserungen
+#  Gleiche Größe wie v2 (~28.7M) + Alle modernen Verbesserungen
 #  
 #  Änderungen:
 #  ✓ LayerNorm → RMSNorm
