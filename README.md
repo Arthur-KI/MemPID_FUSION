@@ -29,13 +29,13 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Traditional Transformer    vs    MemPID_FUSION            │
+│  Traditional Transformer    vs    MemPID_FUSION             │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  [Attention O(n²)]              [PID Gates O(n)]           │
+│  [Attention O(n²)]              [PID Gates O(n)]            │
 │       ↓                              ↓                      │
-│  Expensive for                  Linear complexity!         │
-│  long sequences                 Efficient memory!          │
+│  Expensive for                  Linear complexity!          │
+│  long sequences                 Efficient memory!           │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -63,38 +63,38 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 │                                                             │
 │  Input                                                      │
 │    ↓                                                        │
-│  ┌─────────────┐                                           │
-│  │  TokenShift │  ← Temporal mixing                        │
-│  └──────┬──────┘                                           │
+│  ┌─────────────┐                                            │
+│  │  TokenShift │  ← Temporal mixing                         │
+│  └──────┬──────┘                                            │
 │         ↓                                                   │
-│  ┌─────────────┐                                           │
-│  │   RMSNorm   │  ← Pre-normalization                      │
-│  └──────┬──────┘                                           │
+│  ┌─────────────┐                                            │
+│  │   RMSNorm   │  ← Pre-normalization                       │
+│  └──────┬──────┘                                            │
 │         ↓                                                   │
-│  ┌─────────────────────────────────────┐                   │
-│  │    Causal Dilated Convolution       │                   │
-│  │    (kernel=4, dilations=1,2,4,8)    │                   │
-│  └──────┬──────────────────────────────┘                   │
+│  ┌─────────────────────────────────────┐                    │
+│  │    Causal Dilated Convolution       │                    │
+│  │    (kernel=4, dilations=1,2,4,8)    │                    │
+│  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
-│  ┌─────────────┐                                           │
-│  │   SwiGLU    │  ← Activation                             │
-│  └──────┬──────┘                                           │
+│  ┌─────────────┐                                            │
+│  │   SwiGLU    │  ← Activation                              │
+│  └──────┬──────┘                                            │
 │         ↓                                                   │
-│  ┌─────────────────────────────────────┐                   │
-│  │         PID Memory Gate             │                   │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐           │                   │
-│  │  │ Kp  │ │ Ki  │ │ Kd  │  ← Learnable                  │
-│  │  └──┬──┘ └──┬──┘ └──┬──┘           │                   │
-│  │     ↓       ↓       ↓               │                   │
-│  │   P-Term  I-Term  D-Term            │                   │
-│  │     └───────┴───────┘               │                   │
-│  │              ↓                       │                   │
-│  │        Gate Output                   │                   │
-│  └──────┬──────────────────────────────┘                   │
+│  ┌─────────────────────────────────────┐                    │
+│  │         PID Memory Gate             │                    │
+│  │  ┌─────┐ ┌─────┐ ┌─────┐            │                    │
+│  │  │ Kp  │ │ Ki  │ │ Kd  │  ← Learnable                    │
+│  │  └──┬──┘ └──┬──┘ └──┬──┘            │                    │
+│  │     ↓       ↓       ↓               │                    │
+│  │   P-Term  I-Term  D-Term            │                    │
+│  │     └───────┴───────┘               │                    │
+│  │              ↓                      │                    │
+│  │        Gate Output                  │                    │
+│  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
-│  ┌─────────────────────────────────────┐                   │
-│  │     Highway (Up → Down → Up)        │                   │
-│  └──────┬──────────────────────────────┘                   │
+│  ┌─────────────────────────────────────┐                    │
+│  │     Highway (Up → Down → Up)        │                    │
+│  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
 │  Output + Residual                                          │
 │                                                             │
