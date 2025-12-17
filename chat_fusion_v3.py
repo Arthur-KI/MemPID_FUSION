@@ -1,6 +1,6 @@
 # chat_fusion_v3.py
 # ═══════════════════════════════════════════════════════════════════
-#  🧠 MemPID_FUSION v2 - Interactive Chat & Test
+#  🧠 MemPID_FUSION v3 - Interactive Chat & Test
 #
 #  Author: Arthur-KI
 #  License: MIT
@@ -12,18 +12,18 @@ import torch.nn.functional as F
 from tokenizers import Tokenizer
 
 # Import model class from training script
-from training_MemPID_FUSION_v2 import MemPIDModel
+from training_MemPID_FUSION_v3 import MemPIDModel
 
 # ═══════════════════════════════════════════════════════════════════
 # SETUP
 # ═══════════════════════════════════════════════════════════════════
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-MODEL_PATH = 'best_model_v2.pt'
-TOKENIZER_PATH = 'tokenizer_v2.json'
+MODEL_PATH = 'best_model_v3.pt'
+TOKENIZER_PATH = 'tokenizer_v3.json'
 
 print("═" * 60)
-print("  🧠 MemPID_FUSION v2 - Chat & Test")
+print("  🧠 MemPID_FUSION v3 - Chat & Test")
 print("═" * 60)
 print(f"\n📂 Lade Modell von {MODEL_PATH}...")
 
