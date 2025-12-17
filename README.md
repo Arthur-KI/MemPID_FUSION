@@ -125,7 +125,7 @@ The Solution - Importance Pool:
 │  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
 │  ┌─────────────────────────────────────┐                    │
-│  │    Multi-Head Importance Pool       │  ← NEW in v2!      │
+│  │    Multi-Head Importance Pool       │  ← NEW in v3!      │
 │  │    (4 heads, cumsum trick, O(n))    │                    │
 │  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
