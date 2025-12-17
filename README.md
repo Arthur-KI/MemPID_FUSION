@@ -25,8 +25,8 @@
 
 ## 🆕 What's New in v3
 
-| Feature | v1 | v3 |
-|---------|----|----|
+| Feature | v2.5 | v3 |
+|---------|------|----|
 | **Multi-Head Importance Pool** | ❌ Mean Pool | ✅ 4 learned "editors" |
 | **Adaptive Decay** | ❌ Static | ✅ Content-aware forgetting |
 | **Dimensions** | 512 | 1024 |
@@ -34,7 +34,24 @@
 | **Parameters** | ~28M | ~128M |
 | **Coherent Generation** | ~200 tokens | **300-500 tokens** |
 
----
+### 🔧 Easy Scaling
+
+The architecture scales by simply changing a few constants in the code:
+```python
+# training_MemPID_FUSION_v3.py - Just change these values:
+DIM = 1024           # → 2048 for larger model
+LAYERS_PER_STACK = 6 # → 12 for deeper model
+BLOCK_SIZE = 2048    # → 4096 for longer context
+```
+
+| Config | DIM | Layers | ~Parameters |
+|--------|-----|--------|-------------|
+| Small  | 512 | 6 | ~28M |
+| Medium | 1024 | 6 | ~128M |
+| Large  | 2048 | 8 | ~500M |
+| XL     | 2560 | 12 | ~1B |
+
+No architecture changes needed – just scale up and train! 🚀
 
 ## 🧠 What is MemPID_FUSION?
 
