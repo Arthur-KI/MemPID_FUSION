@@ -1,11 +1,11 @@
 # training_MemPID_FUSION_v3.py
 # ═══════════════════════════════════════════════════════════════════
-#  🧠 MemPID_FUSION v2 - MULTI-HEAD IMPORTANCE POOL + ADAPTIVE DECAY
+#  🧠 MemPID_FUSION v3 - MULTI-HEAD IMPORTANCE POOL + ADAPTIVE DECAY
 #
 #  A novel language model using PID controllers instead of attention.
 #  No O(n²) - just O(n)!
 #
-#  New in v2:
+#  New in v3:
 #    - Multi-Head Importance Pool (4 heads, content-selective)
 #    - Adaptive Decay (time-selective forgetting)
 #    - Larger architecture (1024 dim, 2048 context)
@@ -72,7 +72,7 @@ MAX_DILATION = 32
 EXPANSION_FACTOR = 2
 GATE_RANK = 64
 
-# v2 NEW: Multi-Head Importance
+# v3 NEW: Multi-Head Importance
 IMPORTANCE_HEADS = 4            # 4 "editors" for different aspects
 USE_IMPORTANCE_POOL = True      # Instead of CausalMeanPool
 
@@ -903,8 +903,8 @@ def train():
                         'adaptive_decay': True,
                         'importance_heads': IMPORTANCE_HEADS
                     }
-                }, 'best_model_v2.pt')
-                tokenizer.save('tokenizer_v2.json')
+                }, 'best_model_v3.pt')
+                tokenizer.save('tokenizer_v3.json')
             
             if early_stopping.should_stop:
                 tqdm.write(f"\n⏹️ Early Stopping bei Step {step}")
@@ -916,7 +916,7 @@ def train():
                 'step': step,
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
-            }, f'checkpoint_v2_step{step}.pt')
+            }, f'checkpoint_v3_step{step}.pt')
     
     print("\n" + "═" * 50)
     print("  ✅ Training abgeschlossen!")
