@@ -23,9 +23,9 @@
 
 ---
 
-## 🆕 What's New in v2
+## 🆕 What's New in v3
 
-| Feature | v1 | v2 |
+| Feature | v1 | v3 |
 |---------|----|----|
 | **Multi-Head Importance Pool** | ❌ Mean Pool | ✅ 4 learned "editors" |
 | **Adaptive Decay** | ❌ Static | ✅ Content-aware forgetting |
@@ -68,7 +68,7 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 
 ---
 
-## 🎯 Multi-Head Importance Pool (New in v2!)
+## 🎯 Multi-Head Importance Pool (New in v3!)
 
 The key innovation of v2: Instead of treating all tokens equally, the model learns **what's important**.
 
@@ -98,7 +98,7 @@ The Solution - Importance Pool:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MemPID_FUSION v2 Block                   │
+│                    MemPID_FUSION v3 Block                   │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Input                                                      │
@@ -181,7 +181,7 @@ output = silu(P_term + I_term + D_term) * input
 
 ```
 ┌─────────────────────────────────────────┐
-│  MemPID_FUSION v2                       │
+│  MemPID_FUSION v3                       │
 ├─────────────────────────────────────────┤
 │  Parameters:     ~128M                  │
 │  Dimensions:     1024                   │
@@ -226,13 +226,13 @@ tokenizers
 # Prepare your data in training_data/ folder
 # Each subfolder becomes a category token: training_data/classics/ → <CLASSICS>
 
-python training_MemPID_FUSION_v2.py
+python training_MemPID_FUSION_v3.py
 ```
 
 ### Chat / Inference
 
 ```bash
-python chat_fusion_v2.py
+python chat_fusion_v3.py
 ```
 
 Choose from:
@@ -258,7 +258,7 @@ The model uses special tokens to control output style:
 
 ## 📈 Results
 
-| Metric | v1 | v2 |
+| Metric | v1 | v3 |
 |--------|----|----|
 | Val Loss | 3.85 | 4.03 |
 | Coherent tokens | ~200 | **300-500** |
@@ -301,8 +301,7 @@ MemPID_FUSION/
 ## 🗺️ Roadmap
 
 - [x] v1: Basic PID architecture (28M params)
-- [x] v2: Multi-Head Importance Pool + Adaptive Decay (128M params)
-- [ ] v3: English training data
+- [x] v3: Multi-Head Importance Pool + Adaptive Decay (128M params)
 - [ ] 500M parameter version
 - [ ] Benchmarks against GPT-2
 
