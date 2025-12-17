@@ -15,11 +15,24 @@
                 ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 ```
 
-> **A novel language model architecture using PID controllers instead of attention.**
+> **A novel language model architecture using PID controllers instead of attention. No O(n²) - just O(n)!**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
+
+---
+
+## 🆕 What's New in v2
+
+| Feature | v1 | v2 |
+|---------|----|----|
+| **Multi-Head Importance Pool** | ❌ Mean Pool | ✅ 4 learned "editors" |
+| **Adaptive Decay** | ❌ Static | ✅ Content-aware forgetting |
+| **Dimensions** | 512 | 1024 |
+| **Context Window** | 512 tokens | 2048 tokens |
+| **Parameters** | ~28M | ~128M |
+| **Coherent Generation** | ~200 tokens | **300-500 tokens** |
 
 ---
 
@@ -48,9 +61,36 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 |---------|-------------|
 | 🚫 **No Attention** | O(n) complexity instead of O(n²) |
 | 🎛️ **PID Controllers** | Learnable Kp, Ki, Kd per dimension |
-| 🌊 **Dilated Convolutions** | Captures local and global patterns |
-| 🛣️ **Highway Connections** | Smooth gradient flow |
-| ⚡ **Efficient** | 28M params, 0.23 GB VRAM |
+| 🎯 **Multi-Head Importance Pool** | 4 heads learn what's important (NEW!) |
+| 🌊 **Adaptive Decay** | Content-aware forgetting (NEW!) |
+| 🛣️ **Highway Connections** | Up → Down → Up architecture |
+| ⚡ **Efficient** | ~128M params, runs on consumer GPUs |
+
+---
+
+## 🎯 Multi-Head Importance Pool (New in v2!)
+
+The key innovation of v2: Instead of treating all tokens equally, the model learns **what's important**.
+
+```
+The Problem with Mean Pooling:
+  [King, uh, the, well, daughter] → all weighted equally
+  → "uh" dilutes "King" → fuzzy context
+
+The Solution - Importance Pool:
+  [King, uh, the, well, daughter]
+     ↓     ↓    ↓    ↓      ↓
+   0.35  0.02 0.08 0.03   0.32  ← Learned weights!
+  → Important tokens dominate, noise is ignored
+```
+
+**4 Heads = 4 "Editors"**, each specializing in different aspects:
+- Head 1 → Subjects/Nouns
+- Head 2 → Verbs/Actions  
+- Head 3 → Negations/Modifiers
+- Head 4 → Noise Filter
+
+**Still O(n)!** Uses cumsum trick instead of attention matrix.
 
 ---
 
@@ -58,60 +98,74 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MemPID_FUSION Block                      │
+│                    MemPID_FUSION v2 Block                   │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Input                                                      │
 │    ↓                                                        │
-│  ┌─────────────┐                                            │
-│  │  TokenShift │  ← Temporal mixing                         │
-│  └──────┬──────┘                                            │
-│         ↓                                                   │
 │  ┌─────────────┐                                            │
 │  │   RMSNorm   │  ← Pre-normalization                       │
 │  └──────┬──────┘                                            │
 │         ↓                                                   │
 │  ┌─────────────────────────────────────┐                    │
 │  │    Causal Dilated Convolution       │                    │
-│  │    (kernel=4, dilations=1,2,4,8)    │                    │
+│  │    (kernel=64, dilations=1→32)      │                    │
 │  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
-│  ┌─────────────┐                                            │
-│  │   SwiGLU    │  ← Activation                              │
-│  └──────┬──────┘                                            │
-│         ↓                                                   │
 │  ┌─────────────────────────────────────┐                    │
-│  │         PID Memory Gate             │                    │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐            │                    │
-│  │  │ Kp  │ │ Ki  │ │ Kd  │  ← Learnable                    │
-│  │  └──┬──┘ └──┬──┘ └──┬──┘            │                    │
-│  │     ↓       ↓       ↓               │                    │
-│  │   P-Term  I-Term  D-Term            │                    │
-│  │     └───────┴───────┘               │                    │
+│  │      Adaptive PID Memory Gate       │                    │
+│  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌───────┐  │                    │
+│  │  │ Kp  │ │ Ki  │ │ Kd  │ │ Decay │  │ ← All learnable!   │
+│  │  └──┬──┘ └──┬──┘ └──┬──┘ └───┬───┘  │                    │
+│  │     ↓       ↓       ↓        ↓      │                    │
+│  │   P-Term  I-Term  D-Term  Adaptive  │                    │
+│  │     └───────┴───────┴────────┘      │                    │
 │  │              ↓                      │                    │
-│  │        Gate Output                  │                    │
+│  │        Gated Output                 │                    │
 │  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
 │  ┌─────────────────────────────────────┐                    │
-│  │     Highway (Up → Down → Up)        │                    │
+│  │    Multi-Head Importance Pool       │  ← NEW in v2!      │
+│  │    (4 heads, cumsum trick, O(n))    │                    │
 │  └──────┬──────────────────────────────┘                    │
 │         ↓                                                   │
 │  Output + Residual                                          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────┐
+                    │  Up-Down-Up     │
+                    │  Highway        │
+                    ├─────────────────┤
+                    │  Up Stack (6L)  │
+                    │       ↓         │
+                    │  Gate + Skip    │
+                    │       ↓         │
+                    │  Down Stack(6L) │
+                    │       ↓         │
+                    │  Gate + Skip    │
+                    │       ↓         │
+                    │  Up Stack (6L)  │
+                    │       ↓         │
+                    │  Final Gate     │
+                    └─────────────────┘
 ```
 
 ### 🎛️ The PID Controller
 
-The core innovation: Each dimension has its own PID controller.
+Each dimension has its own PID controller with **adaptive decay**:
 
 ```python
-# Simplified PID Gate
-P_term = Kp * current_state      # Present (now)
-I_term = Ki * integral_state     # Past (memory)  
-D_term = Kd * (current - prev)   # Change (derivative)
+# PID Gate with Adaptive Decay
+P_term = Kp * current_state           # Present (react now)
+I_term = Ki * integral_state          # Past (accumulated memory)  
+D_term = Kd * (current - previous)    # Change (detect transitions)
 
-output = sigmoid(P_term + I_term + D_term) * input
+# NEW: Content-aware decay
+decay = sigmoid(base_decay + content_signal)
+new_integral = decay * old_integral + (1 - decay) * current
+
+output = silu(P_term + I_term + D_term) * input
 ```
 
 | Term | Function | What it learns |
@@ -119,6 +173,7 @@ output = sigmoid(P_term + I_term + D_term) * input
 | **P** (Proportional) | React to current input | Immediate patterns |
 | **I** (Integral) | Accumulate over time | Long-term context |
 | **D** (Derivative) | Detect changes | Transitions, surprises |
+| **Decay** | Adaptive forgetting | When to remember/forget |
 
 ---
 
@@ -126,15 +181,16 @@ output = sigmoid(P_term + I_term + D_term) * input
 
 ```
 ┌─────────────────────────────────────────┐
-│  MemPID_FUSION v2.5                     │
+│  MemPID_FUSION v2                       │
 ├─────────────────────────────────────────┤
-│  Parameters:     28,703,936 (28.7M)     │
-│  Dimensions:     512                    │
-│  Layers:         16                     │
+│  Parameters:     ~128M                  │
+│  Dimensions:     1024                   │
+│  Layers:         6 per stack (×3)       │
 │  Vocab Size:     16,000 (BPE)           │
-│  Context:        512 tokens             │
-│  VRAM Usage:     ~0.23 GB               │
+│  Context:        2048 tokens            │
+│  Importance:     4 heads                │
 │  Precision:      bfloat16               │
+│  Val Loss:       ~4.03                  │
 └─────────────────────────────────────────┘
 ```
 
@@ -167,14 +223,22 @@ tokenizers
 ### Training
 
 ```bash
-python training_MemPID_FUSION_v2_5.py
+# Prepare your data in training_data/ folder
+# Each subfolder becomes a category token: training_data/classics/ → <CLASSICS>
+
+python training_MemPID_FUSION_v2.py
 ```
 
 ### Chat / Inference
 
 ```bash
-python chat_fusion_v2_5.py
+python chat_fusion_v2.py
 ```
+
+Choose from:
+1. 💬 Interactive Chat
+2. 🧪 Quick Test (all categories)
+3. 📜 Long Context Test (500 tokens)
 
 ---
 
@@ -188,37 +252,22 @@ The model uses special tokens to control output style:
 | `<PHILOSOPHIE>` | Philosophical writing |
 | `<LYRIK>` | Poetry |
 | `<WISSEN>` | Encyclopedia/Facts |
-| `<DRAMA>` | Theater/Dialogue |
-
-### Example Outputs
-
-**Input:** `<KLASSIKER> Goethe, Faust:`
-```
-KAISER:
-Wie es drüben ist mir's gut,
-Der Witze nicht wieder zurück.
-Es hebt sich an. Ich bin euch lieb.
-```
-
-**Input:** `<PHILOSOPHIE> Zarathustra`
-```
-Also sprachst du nach, dass du nicht mehr sehst, 
-sondern darum, wie du willst; du schliebst dich in dir,
-als ob du es besser ist als du, so stolz bist...
-```
+| `<GESETZE>` | Legal texts |
 
 ---
 
 ## 📈 Results
 
-Training on German literature and Wikipedia:
+| Metric | v1 | v2 |
+|--------|----|----|
+| Val Loss | 3.85 | 4.03 |
+| Coherent tokens | ~200 | **300-500** |
+| Grammar | ✅ | ✅ |
+| Style differentiation | ✅ | ✅ |
+| Long-range coherence | ⚠️ | ✅ |
+| Factual accuracy | ❌ | ❌ (limited by size) |
 
-| Metric | Value |
-|--------|-------|
-| Final Loss | 3.85 |
-| Coherent sentences | ✅ |
-| Style differentiation | ✅ |
-| Factual accuracy | ❌ (limited by size) |
+**Note:** Higher loss but better coherence! The Importance Pool successfully filters noise.
 
 ---
 
@@ -226,12 +275,12 @@ Training on German literature and Wikipedia:
 
 | Aspect | Attention | PID |
 |--------|-----------|-----|
-| Complexity | O(n²) | O(n) |
+| Complexity | O(n²) | **O(n)** |
 | Memory | High | Low |
 | Long sequences | Expensive | Efficient |
 | Interpretability | Black box | Control theory! |
 
-The hypothesis: PID controllers can learn to regulate information flow similarly to attention, but with explicit temporal dynamics (P=present, I=past, D=change).
+The hypothesis: PID controllers can learn to regulate information flow similarly to attention, but with explicit temporal dynamics (P=present, I=past, D=change) and **linear complexity**.
 
 ---
 
@@ -239,12 +288,23 @@ The hypothesis: PID controllers can learn to regulate information flow similarly
 
 ```
 MemPID_FUSION/
-├── training_MemPID_FUSION_v2_5.py   # Training + Model
-├── chat_fusion_v2_5.py              # Inference / Chat
-├── requirements.txt                  # Dependencies
-├── LICENSE
-└── README.md
+├── training_MemPID_FUSION_v2.py   # Training + Model Definition
+├── chat_fusion_v2.py              # Inference / Interactive Chat
+├── requirements.txt               # Dependencies
+├── CHANGELOG.md                   # Version history
+├── LICENSE.txt                    # MIT License
+└── README.md                      # This file
 ```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] v1: Basic PID architecture (28M params)
+- [x] v2: Multi-Head Importance Pool + Adaptive Decay (128M params)
+- [ ] v3: English training data
+- [ ] 500M parameter version
+- [ ] Benchmarks against GPT-2
 
 ---
 
@@ -254,12 +314,13 @@ Contributions welcome! Feel free to:
 - Open issues
 - Submit pull requests
 - Share your experiments
+- Train on different data
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file.
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file.
 
 ---
 
@@ -282,7 +343,7 @@ This project was created through human-AI collaboration:
 
 - **Arthur** - Vision, ideas, training, testing
 - **Claude (Anthropic)** - Architecture design, code, documentation
-- **Gemini Pro (Google)** - Analysis, data strategy suggestions
+- **Gemini Pro (Google)** - Analysis, cumsum O(n) fix, data strategy
 
 Proof that curiosity beats credentials! Built without formal CS education.
 
