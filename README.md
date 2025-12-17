@@ -70,7 +70,7 @@ MemPID_FUSION is an experimental language model that replaces the traditional **
 
 ## 🎯 Multi-Head Importance Pool (New in v3!)
 
-The key innovation of v2: Instead of treating all tokens equally, the model learns **what's important**.
+The key innovation of v3: Instead of treating all tokens equally, the model learns **what's important**.
 
 ```
 The Problem with Mean Pooling:
