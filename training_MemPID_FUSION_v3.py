@@ -55,6 +55,7 @@ torch.backends.cudnn.allow_tf32 = True
 BATCH_SIZE = 2
 GRAD_ACCUM = 1
 BLOCK_SIZE = 2048
+MAX_POSITIONS = 16384
 MAX_ITERS = 150000
 EVAL_INTERVAL = 500
 CHECKPOINT_INTERVAL = 1000
@@ -523,7 +524,7 @@ class MemPIDModel(nn.Module):
         self.mem = AdaptivePIDMemory(dim, batch_size, DEVICE)
         
         self.emb = nn.Embedding(vocab_size, dim)
-        self.pos = nn.Parameter(torch.randn(1, BLOCK_SIZE, dim) * 0.02)
+        self.pos = nn.Parameter(torch.randn(1, MAX_POSITIONS, dim) * 0.02)
         self.emb_norm = RMSNorm(dim)
         self.emb_drop = nn.Dropout(EMB_DROPOUT)
         
